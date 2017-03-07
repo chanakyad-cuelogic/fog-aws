@@ -21,6 +21,8 @@ module Fog
         attribute :state,               :aliases => 'Status'
         attribute :storage_type,        :aliases => 'StorageType'
         attribute :type,                :aliases => 'SnapshotType'
+        attribute :encrypted,           :aliases => 'Encrypted'
+        attribute :kms_key_id,          :aliases => 'KmsKeyId'
 
         def ready?
           state == 'available'
