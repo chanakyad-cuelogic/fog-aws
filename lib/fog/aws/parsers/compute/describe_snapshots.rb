@@ -32,7 +32,7 @@ module Fog
               when 'item'
                 @response['snapshotSet'] << @snapshot
                 @snapshot = { 'tagSet' => {} }
-              when 'description', 'ownerId', 'progress', 'snapshotId', 'status', 'volumeId'
+              when 'description', 'ownerId', 'progress', 'snapshotId', 'status', 'volumeId', 'kmsKeyId'
                 @snapshot[name] ||= value
               when 'requestId'
                 @response[name] = value

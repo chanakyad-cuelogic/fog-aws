@@ -13,6 +13,7 @@ module Fog
         attribute :tags,        :aliases => 'tagSet'
         attribute :volume_id,   :aliases => 'volumeId'
         attribute :volume_size, :aliases => 'volumeSize'
+        attribute :kms_key_id,  :aliases => 'kmsKeyId'
 
         def destroy
           requires :id
