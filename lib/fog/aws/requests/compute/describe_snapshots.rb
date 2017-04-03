@@ -81,7 +81,8 @@ module Fog
             'start-time'  => 'startTime',
             'status'      => 'status',
             'volume-id'   => 'volumeId',
-            'volume-size' => 'volumeSize'
+            'volume-size' => 'volumeSize',
+            'kms-key-id'  => 'kmsKeyId'
           }
 
           for filter_key, filter_value in filters
