@@ -3,6 +3,8 @@ module Fog
     class AWS < Fog::Service
       extend Fog::AWS::CredentialFetcher::ServiceMethods
 
+      class RequestLimitExceeded < Fog::Errors::Error; end
+
       requires :aws_access_key_id, :aws_secret_access_key
       recognizes :endpoint, :region, :host, :path, :port, :scheme, :persistent, :aws_session_token, :use_iam_profile, :aws_credentials_expire_at, :instrumentor, :instrumentor_name, :version
 
@@ -120,18 +122,22 @@ module Fog
       request :describe_subnets
       request :describe_tags
       request :describe_volumes
+      request :describe_volumes_modifications
       request :describe_volume_status
       request :describe_vpcs
       request :describe_vpc_attribute
       request :describe_vpc_classic_link
+      request :describe_vpc_classic_link_dns_support
       request :detach_network_interface
       request :detach_internet_gateway
       request :detach_volume
       request :detach_classic_link_vpc
       request :disable_vpc_classic_link
+      request :disable_vpc_classic_link_dns_support
       request :disassociate_address
       request :disassociate_route_table
       request :enable_vpc_classic_link
+      request :enable_vpc_classic_link_dns_support
       request :get_console_output
       request :get_password_data
       request :import_key_pair
@@ -140,6 +146,7 @@ module Fog
       request :modify_network_interface_attribute
       request :modify_snapshot_attribute
       request :modify_subnet_attribute
+      request :modify_volume
       request :modify_volume_attribute
       request :modify_vpc_attribute
       request :move_address_to_vpc
@@ -290,6 +297,7 @@ module Fog
                   }
                 ],
                 :spot_requests => {},
+                :volume_modifications => {}
               }
             end
           end
@@ -531,7 +539,11 @@ module Fog
           end
         end
 
-        def _request(body, headers, idempotent, parser)
+        def _request(body, headers, idempotent, parser, retries = 0)
+
+          max_retries = 10
+
+          begin
           @connection.request({
               :body       => body,
               :expects    => 200,
@@ -540,15 +552,24 @@ module Fog
               :method     => 'POST',
               :parser     => parser
             })
-        rescue Excon::Errors::HTTPStatusError => error
-          match = Fog::AWS::Errors.match_error(error)
-          raise if match.empty?
-          raise case match[:code]
+          rescue Excon::Errors::HTTPStatusError => error
+            match = Fog::AWS::Errors.match_error(error)
+            raise if match.empty?
+            raise case match[:code]
                 when 'NotFound', 'Unknown'
                   Fog::Compute::AWS::NotFound.slurp(error, match[:message])
+                when 'RequestLimitExceeded'
+                  if retries < max_retries
+                    sleep (2.0 ** (1.0 + retries) * 100) / 1000.0
+                    retries += 1
+                    retry
+                  else
+                    Fog::Compute::AWS::RequestLimitExceeded.slurp(error, "Max retries exceeded (#{max_retries}) #{match[:code]} => #{match[:message]}")
+                  end
                 else
                   Fog::Compute::AWS::Error.slurp(error, "#{match[:code]} => #{match[:message]}")
                 end
+          end
         end
       end
     end
