@@ -77,7 +77,8 @@ module Fog
               @launch_configuration[name] = value.to_f
 
             when 'AssociatePublicIpAddress'
-              @in_associate_public_ip = false
+              @in_associate_public_ip = value
+              @launch_configuration[name] = (value == 'true')
             when 'BlockDeviceMappings'
               @in_block_device_mappings = false
             when 'LaunchConfigurations'
